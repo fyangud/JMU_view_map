@@ -187,10 +187,10 @@
 
       // Flood zone layers
       const floodLayer = new FeatureLayer({
-        url: "https://gis.harrisonburgva.gov/arcgis/rest/services/FloodRiskInformation/MapServer/2",
+        url: "https://gis.harrisonburgva.gov/arcgis/rest/services/Resources/Flood_Risk_Information/FeatureServer/2",
       });
       const floodwayLayer = new FeatureLayer({
-        url: "https://gis.harrisonburgva.gov/arcgis/rest/services/FloodRiskInformation/MapServer/1",
+        url: "https://gis.harrisonburgva.gov/arcgis/rest/services/Resources/Flood_Risk_Information/FeatureServer/1",
       });
 
       /* ------------------------------ */
@@ -236,8 +236,36 @@
 
       console.log(scaleFunction);*/
 
+      //const colorMapElevation = rasterFunctionUtils.colormap({
+      //  colorRampName: "elevation1",
+      //});
+
+      // Remap elevation values to a fixed range (0–1000 ft)
+      const remapElevation = rasterFunctionUtils.remap({
+        // Map all values <0 to 0, >1000 to 1000
+        rangeMaps: [
+          { range: [-500, 390], output: 390 }, { range: [390, 400], output: 400 }, { range: [400, 410], output: 410 }, { range: [410, 420], output: 420},
+          { range: [420, 430], output: 430 }, { range: [430, 440], output: 440 }, { range: [440, 450], output: 450 }, { range: [450, 460], output: 460 },
+          { range: [460, 470], output: 470 }, { range: [470, 480], output: 480 }, { range: [480, 490], output: 490 }, { range: [490, 500], output: 500 },
+          { range: [500, 510], output: 510 }, { range: [510, 520], output: 520 }, { range: [520, 530], output: 530 }, { range: [530, 540], output: 540 },
+          { range: [540, 9000], output: 550 }
+        ],
+        outputPixelType: "u16"
+      });
+
+      // Custom color ramp
+      const customColorRamp = {
+        type: "algorithmic",
+        fromColor: [174, 235, 42],  // Green (min)
+        toColor: [255, 105, 31],    // Red (max)
+        algorithm: "esriHSVAlgorithm"
+      };
+
+      // Apply a colormap with a FIXED range (100–1000 ft)
       const colorMapElevation = rasterFunctionUtils.colormap({
-        colorRampName: "elevation1",
+        //colorRampName: "elevation1",
+        colorRamp: customColorRamp,
+        raster: remapElevation
       });
 
       /* -------------------------------------------- */
@@ -319,6 +347,8 @@
       const opacitySlider = document.getElementById("opacitySlider");
       opacitySlider.addEventListener("calciteSliderInput", (event) => {
         analysisLayer.opacity = 1 - event.target.value / 100;
+        floodLayer.opacity = 1 - event.target.value / 100;
+        floodwayLayer.opacity = 1 - event.target.value / 100;
       });
 
       const elevationSlider = document.getElementById("elevationSlider");
@@ -387,6 +417,7 @@
             analysisLayer.visible = true;
             analysisLayer.title = activeAnalysisMode + " | m.a.s.l";
             analysisLayer.rasterFunction = colorMapElevation;
+            //analysisLayer.rasterFunction = remapElevation;
             floodLayer.visible = false;
             floodwayLayer.visible = false;
             break;
